@@ -216,11 +216,18 @@ class DataPipeline:
         description=input_description,
         num_res=num_res)
 
-    msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa))
+    # msa_output_dir is <whatever>/<complex>/ab_fv/<chain_id>
+    # meganlib msa can be found in <whatever>/<complex>/meganlib_msa/<chain_id>.a3m
+    
+    chain_id = msa_output_dir.name
+    meganlib_msa_path = msa_output_dir / "../../meganlib_msa" / chain_id + ".a3m"
+    meganlib_msa = parsers.parse_a3m(meganlib_msa_path.read_text())
+    msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa, meganlib_msa))
 
     logging.info('Uniref90 MSA size: %d sequences.', len(uniref90_msa))
     logging.info('BFD MSA size: %d sequences.', len(bfd_msa))
     logging.info('MGnify MSA size: %d sequences.', len(mgnify_msa))
+    logging.info('Meganlib MSA size: %d sequences.', len(meganlib_msa))
     logging.info('Final (deduplicated) MSA size: %d sequences.',
                  msa_features['num_alignments'][0])
     logging.info('Total number of templates (NB: this can include bad '
