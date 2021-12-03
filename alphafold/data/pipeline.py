@@ -217,13 +217,22 @@ class DataPipeline:
         description=input_description,
         num_res=num_res)
 
-    # msa_output_dir is <whatever>/<complex>/ab_fv/<chain_id>
+    # msa_output_dir is <whatever>/<complex>/ab_fv/msas/<chain_id> for multimer
+    # msa_output_dir is <whatever>/<complex>/ab_fv/msas for monomer
     # meganlib msa can be found in <whatever>/<complex>/meganlib_msa/<chain_id>.a3m
     
     msa_output_dir = Path(msa_output_dir)
     chain_id = msa_output_dir.name
-    meganlib_msa_path = msa_output_dir / "../../meganlib_msa" / chain_id + ".a3m"
-    meganlib_msa = parsers.parse_a3m(meganlib_msa_path.read_text())
+    # check if multimer
+    if chain_id in ("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"):
+      meganlib_msa_path = msa_output_dir / "../../../meganlib_msa" / chain_id + ".a3m"
+      meganlib_msa = parsers.parse_a3m(meganlib_msa_path.read_text())
+    elif chain_id == "ab_fv": # monomer case
+      meganlib_msa_path = msa_output_dir / "../../meganlib_msa/A.a3m"
+      meganlib_msa = parsers.parse_a3m(meganlib_msa_path.read_text())
+    else:
+      raise ValueError(f"invalid chain_id {chain_id}")
+    
     msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa, meganlib_msa))
 
     logging.info('Uniref90 MSA size: %d sequences.', len(uniref90_msa))
