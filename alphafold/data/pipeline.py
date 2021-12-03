@@ -223,17 +223,24 @@ class DataPipeline:
     
     msa_output_dir = Path(msa_output_dir)
     chain_id = msa_output_dir.name
-    # check if multimer
-    if chain_id in ("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"):
-      meganlib_msa_path = msa_output_dir / "../../../meganlib_msa" / chain_id + ".a3m"
-      meganlib_msa = parsers.parse_a3m(meganlib_msa_path.read_text())
-    elif chain_id == "ab_fv": # monomer case
-      meganlib_msa_path = msa_output_dir / "../../meganlib_msa/A.a3m"
-      meganlib_msa = parsers.parse_a3m(meganlib_msa_path.read_text())
+    # check if multimer (meganlib msa for antibody only)
+    if chain_id in ("A", "B"):
+        meganlib_msa_path = msa_output_dir / "../../../meganlib_msa" / (chain_id + ".a3m")
+        if meganlib_msa_path.exists():
+            meganlib_msa = parsers.parse_a3m(meganlib_msa_path.read_text())
+        else:
+            logging.info('Meganlib MSA not found for %s sequence, is it a target?', chain_id)
+            meganlib_msa = []
+    elif chain_id == "ab_fv": # monomer case, A.a3m should always exist
+        meganlib_msa_path = msa_output_dir / "../../meganlib_msa/A.a3m"
+        meganlib_msa = parsers.parse_a3m(meganlib_msa_path.read_text())
     else:
-      raise ValueError(f"invalid chain_id {chain_id}")
+        meganlib_msa = []
     
-    msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa, meganlib_msa))
+    if meganlib_msa:
+        msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa, meganlib_msa))
+    else:
+        msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa))
 
     logging.info('Uniref90 MSA size: %d sequences.', len(uniref90_msa))
     logging.info('BFD MSA size: %d sequences.', len(bfd_msa))
