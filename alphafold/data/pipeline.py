@@ -231,7 +231,7 @@ class DataPipeline:
         else:
             logging.info('Meganlib MSA not found for %s sequence, is it a target?', chain_id)
             meganlib_msa = []
-    elif chain_id == "ab_fv": # monomer case, A.a3m should always exist
+    elif chain_id == "msas": # monomer case, A.a3m should always exist
         meganlib_msa_path = msa_output_dir / "../../meganlib_msa/A.a3m"
         meganlib_msa = parsers.parse_a3m(meganlib_msa_path.read_text())
     else:
