@@ -17,6 +17,7 @@
 import os
 from typing import Any, Mapping, MutableMapping, Optional, Sequence, Union
 from absl import logging
+from pathlib import Path
 from alphafold.common import residue_constants
 from alphafold.data import msa_identifiers
 from alphafold.data import parsers
