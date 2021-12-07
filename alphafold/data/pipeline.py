@@ -15,7 +15,6 @@
 """Functions for building the input features for the AlphaFold model."""
 
 import os
-from re import template
 from typing import Any, Mapping, MutableMapping, Optional, Sequence, Union
 from absl import logging
 from pathlib import Path
