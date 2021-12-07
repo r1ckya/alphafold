@@ -239,7 +239,7 @@ class DataPipeline:
     else:
         meganlib_msa = []
     
-    msa_features = make_msa_features((meganlib_msa))
+    msa_features = make_msa_features([meganlib_msa])
 
     # logging.info('Uniref90 MSA size: %d sequences.', len(uniref90_msa))
     # logging.info('BFD MSA size: %d sequences.', len(bfd_msa))
