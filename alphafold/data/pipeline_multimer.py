@@ -215,10 +215,12 @@ class DataPipeline:
 
       # We only construct the pairing features if there are 2 or more unique
       # sequences.
-      if not is_homomer_or_monomer:
-        all_seq_msa_features = self._all_seq_msa_features(chain_fasta_path,
-                                                          chain_msa_output_dir)
-        chain_features.update(all_seq_msa_features)
+      
+      # remove for meganlib MSA only mode
+      # if not is_homomer_or_monomer:
+      #   all_seq_msa_features = self._all_seq_msa_features(chain_fasta_path,
+      #                                                     chain_msa_output_dir)
+      #   chain_features.update(all_seq_msa_features)
     return chain_features
 
   def _all_seq_msa_features(self, input_fasta_path, msa_output_dir):
