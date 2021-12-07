@@ -15,6 +15,7 @@
 """Functions for building the input features for the AlphaFold model."""
 
 import os
+from re import template
 from typing import Any, Mapping, MutableMapping, Optional, Sequence, Union
 from absl import logging
 from pathlib import Path
@@ -251,5 +252,17 @@ class DataPipeline:
     #              'templates and is later filtered to top 4): %d.',
     #              templates_result.features['template_domain_names'].shape[0])
 
-    return {**sequence_features, **msa_features}
+    template_features = {
+          'template_aatype': np.zeros(
+              (1, num_res, len(residue_constants.restypes_with_x_and_gap)),
+              np.float32),
+          'template_all_atom_masks': np.zeros(
+              (1, num_res, residue_constants.atom_type_num), np.float32),
+          'template_all_atom_positions': np.zeros(
+              (1, num_res, residue_constants.atom_type_num, 3), np.float32),
+          'template_domain_names': np.array([''.encode()], dtype=np.object),
+          'template_sequence': np.array([''.encode()], dtype=np.object),
+          'template_sum_probs': np.array([0], dtype=np.float32)
+    }
+    return {**sequence_features, **msa_features, **template_features}
     # return {**sequence_features, **msa_features, **templates_result.features}
