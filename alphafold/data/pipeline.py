@@ -209,9 +209,9 @@ class DataPipeline:
     #       'a3m', self.use_precomputed_msas)
     #   bfd_msa = parsers.parse_a3m(hhblits_bfd_uniclust_result['a3m'])
 
-    templates_result = self.template_featurizer.get_templates(
-        query_sequence=input_sequence,
-        hits=pdb_template_hits)
+    # templates_result = self.template_featurizer.get_templates(
+    #     query_sequence=input_sequence,
+    #     hits=pdb_template_hits)
     # END: remove AF2 databases
     
     sequence_features = make_sequence_features(
