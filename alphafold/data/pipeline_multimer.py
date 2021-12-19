@@ -267,12 +267,13 @@ class DataPipeline:
 
     # Search paired msa in paired dbs
     merge_separator = ''
-    merged_chains = merge_separator.join(
+    merged_chains_seq = merge_separator.join(
         (fasta_chain.sequence for _, fasta_chain in chain_id_map.items())
     )
+    merged_chains_str = f'>merged_chains\n{merged_chains_seq}\n'
 
     merged_chains_msas = []
-    with temp_fasta_file(merged_chains) as merged_chains_fasta_path:
+    with temp_fasta_file(merged_chains_str) as merged_chains_fasta_path:
       for i, custom_msa_runner in enumerate(self._custom_paired_msa_runners):
         out_path = os.path.join(
             msa_output_dir, f'custom_paired_msa_{i:02d}.sto'
