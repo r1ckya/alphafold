@@ -47,6 +47,7 @@ def _is_homomer_or_monomer(chains: Iterable[pipeline.FeatureDict]) -> bool:
 
 def pair_and_merge(
     all_chain_features: MutableMapping[str, pipeline.FeatureDict],
+    merged_chain_features: pipeline.FeatureDict,
     is_prokaryote: bool) -> pipeline.FeatureDict:
   """Runs processing on features to augment, pair and merge.
 
@@ -75,8 +76,9 @@ def pair_and_merge(
       pair_msa_sequences=pair_msa_sequences,
       max_templates=MAX_TEMPLATES)
   np_example = msa_pairing.merge_chain_features(
-      np_chains_list=np_chains_list, pair_msa_sequences=pair_msa_sequences,
-      max_templates=MAX_TEMPLATES)
+      np_chains_list=np_chains_list,
+      merged_chain_features=merged_chain_features,
+      pair_msa_sequences=pair_msa_sequences, max_templates=MAX_TEMPLATES)
   np_example = process_final(np_example)
   return np_example
 

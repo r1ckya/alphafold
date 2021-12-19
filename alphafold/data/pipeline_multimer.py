@@ -21,7 +21,7 @@ import dataclasses
 import json
 import os
 import tempfile
-from typing import Mapping, MutableMapping, Sequence
+from typing import Mapping, MutableMapping, Sequence, List
 
 from absl import logging
 from alphafold.common import protein
@@ -174,6 +174,7 @@ class DataPipeline:
                monomer_data_pipeline: pipeline.DataPipeline,
                jackhmmer_binary_path: str,
                uniprot_database_path: str,
+               custom_paired_dbs_paths: List[str],
                max_uniprot_hits: int = 50000,
                use_precomputed_msas: bool = False):
     """Initializes the data pipeline.
@@ -188,6 +189,13 @@ class DataPipeline:
       use_precomputed_msas: Whether to use pre-existing MSAs; see run_alphafold.
     """
     self._monomer_data_pipeline = monomer_data_pipeline
+    self._custom_paired_msa_runners = [
+        jackhmmer.Jackhmmer(
+            binary_path=jackhmmer_binary_path,
+            database_path=db_path
+        )
+        for db_path in custom_paired_dbs_paths
+    ]
     self._uniprot_msa_runner = jackhmmer.Jackhmmer(
         binary_path=jackhmmer_binary_path,
         database_path=uniprot_database_path)
@@ -195,12 +203,12 @@ class DataPipeline:
     self.use_precomputed_msas = use_precomputed_msas
 
   def _process_single_chain(
-      self,
-      chain_id: str,
-      sequence: str,
-      description: str,
-      msa_output_dir: str,
-      is_homomer_or_monomer: bool) -> pipeline.FeatureDict:
+          self,
+          chain_id: str,
+          sequence: str,
+          description: str,
+          msa_output_dir: str,
+          is_homomer_or_monomer: bool) -> pipeline.FeatureDict:
     """Runs the monomer pipeline on a single chain."""
     chain_fasta_str = f'>chain_{chain_id}\n{sequence}\n'
     chain_msa_output_dir = os.path.join(msa_output_dir, chain_id)
@@ -277,8 +285,30 @@ class DataPipeline:
 
     all_chain_features = add_assembly_features(all_chain_features)
 
+    # Search paired msa in paired dbs
+    merge_separator = ''
+    merged_chains = merge_separator.join(
+        (fasta_chain for _, fasta_chain in chain_id_map.items())
+    )
+
+    merged_chains_msas = []
+    with temp_fasta_file(merged_chains) as merged_chains_fasta_path:
+      for i, custom_msa_runner in enumerate(self._custom_paired_msa_runners):
+        out_path = os.path.join(
+            msa_output_dir, f'custom_paired_msa_{i:02d}.sto'
+        )
+        result = pipeline.run_msa_tool(
+            custom_msa_runner, merged_chains_fasta_path, out_path, 'sto',
+            self.use_precomputed_msas
+        )
+        msa = parsers.parse_stockholm(result['sto'])
+        merged_chains_msas.append(msa)
+    merged_chain_features = pipeline.make_msa_features(merged_chains_msas)
+
+    # Concatenate all features
     np_example = feature_processing.pair_and_merge(
         all_chain_features=all_chain_features,
+        merged_chain_features=merged_chain_features,
         is_prokaryote=is_prokaryote,
     )
 

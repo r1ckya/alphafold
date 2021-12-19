@@ -83,6 +83,10 @@ flags.DEFINE_string('uniclust30_database_path', None, 'Path to the Uniclust30 '
                     'database for use by HHblits.')
 flags.DEFINE_string('uniprot_database_path', None, 'Path to the Uniprot '
                     'database for use by JackHMMer.')
+flags.DEFINE_list('custom_dbs_paths', [],
+                  'Paths to custom databases for for use by JackHMMer.')
+flags.DEFINE_list('custom_paired_dbs_paths', [],
+                  'Paths to custom paired databases for for use by JackHMMer.')
 flags.DEFINE_string('pdb70_database_path', None, 'Path to the PDB70 '
                     'database for use by HHsearch.')
 flags.DEFINE_string('pdb_seqres_database_path', None, 'Path to the PDB '
@@ -357,13 +361,16 @@ def main(argv):
       template_searcher=template_searcher,
       template_featurizer=template_featurizer,
       use_small_bfd=use_small_bfd,
-      use_precomputed_msas=FLAGS.use_precomputed_msas)
+      custom_dbs_paths=FLAGS.custom_dbs_paths,
+      use_precomputed_msas=FLAGS.use_precomputed_msas
+  )
 
   if run_multimer_system:
     data_pipeline = pipeline_multimer.DataPipeline(
         monomer_data_pipeline=monomer_data_pipeline,
         jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
         uniprot_database_path=FLAGS.uniprot_database_path,
+        custom_paired_dbs_paths=FLAGS.custom_paired_dbs_paths,
         use_precomputed_msas=FLAGS.use_precomputed_msas)
   else:
     data_pipeline = monomer_data_pipeline

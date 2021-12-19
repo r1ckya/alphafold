@@ -15,7 +15,7 @@
 """Functions for building the input features for the AlphaFold model."""
 
 import os
-from typing import Any, Mapping, MutableMapping, Optional, Sequence, Union
+from typing import Any, Mapping, MutableMapping, Optional, Sequence, Union, List
 from absl import logging
 from alphafold.common import residue_constants
 from alphafold.data import msa_identifiers
@@ -115,6 +115,7 @@ class DataPipeline:
                bfd_database_path: Optional[str],
                uniclust30_database_path: Optional[str],
                small_bfd_database_path: Optional[str],
+               custom_dbs_paths: Optional[List[str]],
                template_searcher: TemplateSearcher,
                template_featurizer: templates.TemplateHitFeaturizer,
                use_small_bfd: bool,
@@ -142,6 +143,14 @@ class DataPipeline:
     self.mgnify_max_hits = mgnify_max_hits
     self.uniref_max_hits = uniref_max_hits
     self.use_precomputed_msas = use_precomputed_msas
+
+    self.jackhmmer_custom_dbs_runners = [
+        jackhmmer.Jackhmmer(
+            binary_path=jackhmmer_binary_path,
+            database_path=custom_db_path
+        )
+        for custom_db_path in custom_dbs_paths
+    ]
 
   def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
     """Runs alignment tools on the input sequence and creates features."""
@@ -216,11 +225,30 @@ class DataPipeline:
         description=input_description,
         num_res=num_res)
 
-    msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa))
+    custom_msas_results = [
+        run_msa_tool(
+            msa_tool, input_fasta_path,
+            os.path.join(msa_output_dir, f'custom_msa_{i:02d}.sto'),
+            'sto', self.use_precomputed_msas)
+        for i, msa_tool in enumerate(self.jackhmmer_custom_dbs_runners)
+    ]
+
+    custom_msas = [
+        parsers.parse_stockholm(msa_result['sto'])
+        for msa_result in custom_msas_results
+    ]
+
+    msa_features = make_msa_features(
+        [uniref90_msa, bfd_msa, mgnify_msa] + custom_msas
+    )
 
     logging.info('Uniref90 MSA size: %d sequences.', len(uniref90_msa))
     logging.info('BFD MSA size: %d sequences.', len(bfd_msa))
     logging.info('MGnify MSA size: %d sequences.', len(mgnify_msa))
+
+    for i, custom_msa in enumerate(custom_msas):
+      logging.info(f'Custom MSA {i:02d} size: {len(custom_msa)} sequences.')
+
     logging.info('Final (deduplicated) MSA size: %d sequences.',
                  msa_features['num_alignments'][0])
     logging.info('Total number of templates (NB: this can include bad '

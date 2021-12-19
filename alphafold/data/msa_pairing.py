@@ -580,7 +580,21 @@ def _concatenate_paired_and_unpaired_features(
   return example
 
 
+def _concatenate_features(example, feats):
+  """Concat two instances of msa features"""
+  for feature_name in MSA_FEATURES:
+    if feature_name in example:
+      example[feature_name] = np.concatenate(
+          [example[feature_name], feats[feature_name]],
+          axis=0
+      )
+  example['num_alignment'] = np.array(
+      example['msa'].shape[0], dtype=np.int32)
+  return example
+
+
 def merge_chain_features(np_chains_list: List[pipeline.FeatureDict],
+                         merged_chain_features: pipeline.FeatureDict,
                          pair_msa_sequences: bool,
                          max_templates: int) -> pipeline.FeatureDict:
   """Merges features for multiple chains to single FeatureDict.
@@ -602,6 +616,7 @@ def merge_chain_features(np_chains_list: List[pipeline.FeatureDict],
       np_chains_list, pair_msa_sequences=False)
   if pair_msa_sequences:
     np_example = _concatenate_paired_and_unpaired_features(np_example)
+  np_example = _concatenate_features(np_example, merged_chain_features)
   np_example = _correct_post_merged_feats(
       np_example=np_example,
       np_chains_list=np_chains_list,
