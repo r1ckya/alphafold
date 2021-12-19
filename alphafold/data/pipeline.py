@@ -121,6 +121,7 @@ class DataPipeline:
                use_small_bfd: bool,
                mgnify_max_hits: int = 501,
                uniref_max_hits: int = 10000,
+               custom_dbs_max_hits: int = 10000,
                use_precomputed_msas: bool = False):
     """Initializes the data pipeline."""
     self._use_small_bfd = use_small_bfd
@@ -142,6 +143,7 @@ class DataPipeline:
     self.template_featurizer = template_featurizer
     self.mgnify_max_hits = mgnify_max_hits
     self.uniref_max_hits = uniref_max_hits
+    self.custom_dbs_max_hits = custom_dbs_max_hits
     self.use_precomputed_msas = use_precomputed_msas
 
     self.jackhmmer_custom_dbs_runners = [
@@ -234,7 +236,9 @@ class DataPipeline:
     ]
 
     custom_msas = [
-        parsers.parse_stockholm(msa_result['sto'])
+        parsers.parse_stockholm(msa_result['sto']).truncate(
+            self.custom_dbs_max_hits
+        )
         for msa_result in custom_msas_results
     ]
 

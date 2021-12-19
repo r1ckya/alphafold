@@ -176,6 +176,7 @@ class DataPipeline:
                uniprot_database_path: str,
                custom_paired_dbs_paths: List[str],
                max_uniprot_hits: int = 50000,
+               max_custom_paired_dbs_hits: int = 50000,
                use_precomputed_msas: bool = False):
     """Initializes the data pipeline.
 
@@ -200,6 +201,7 @@ class DataPipeline:
         binary_path=jackhmmer_binary_path,
         database_path=uniprot_database_path)
     self._max_uniprot_hits = max_uniprot_hits
+    self._custom_paired_dbs_hits = max_custom_paired_dbs_hits
     self.use_precomputed_msas = use_precomputed_msas
 
   def _process_single_chain(
@@ -263,6 +265,27 @@ class DataPipeline:
                            for chain_id, fasta_chain in chain_id_map.items()}
       json.dump(chain_id_map_dict, f, indent=4, sort_keys=True)
 
+    # Search paired msa in paired dbs
+    merge_separator = ''
+    merged_chains = merge_separator.join(
+        (fasta_chain.sequence for _, fasta_chain in chain_id_map.items())
+    )
+
+    merged_chains_msas = []
+    with temp_fasta_file(merged_chains) as merged_chains_fasta_path:
+      for i, custom_msa_runner in enumerate(self._custom_paired_msa_runners):
+        out_path = os.path.join(
+            msa_output_dir, f'custom_paired_msa_{i:02d}.sto'
+        )
+        result = pipeline.run_msa_tool(
+            custom_msa_runner, merged_chains_fasta_path, out_path, 'sto',
+            self.use_precomputed_msas
+        )
+        msa = parsers.parse_stockholm(result['sto'])
+        msa = msa.truncate(max_seqs=self._custom_paired_dbs_hits)
+        merged_chains_msas.append(msa)
+    merged_chain_features = pipeline.make_msa_features(merged_chains_msas)
+
     all_chain_features = {}
     sequence_features = {}
     is_homomer_or_monomer = len(set(input_seqs)) == 1
@@ -284,26 +307,6 @@ class DataPipeline:
       sequence_features[fasta_chain.sequence] = chain_features
 
     all_chain_features = add_assembly_features(all_chain_features)
-
-    # Search paired msa in paired dbs
-    merge_separator = ''
-    merged_chains = merge_separator.join(
-        (fasta_chain for _, fasta_chain in chain_id_map.items())
-    )
-
-    merged_chains_msas = []
-    with temp_fasta_file(merged_chains) as merged_chains_fasta_path:
-      for i, custom_msa_runner in enumerate(self._custom_paired_msa_runners):
-        out_path = os.path.join(
-            msa_output_dir, f'custom_paired_msa_{i:02d}.sto'
-        )
-        result = pipeline.run_msa_tool(
-            custom_msa_runner, merged_chains_fasta_path, out_path, 'sto',
-            self.use_precomputed_msas
-        )
-        msa = parsers.parse_stockholm(result['sto'])
-        merged_chains_msas.append(msa)
-    merged_chain_features = pipeline.make_msa_features(merged_chains_msas)
 
     # Concatenate all features
     np_example = feature_processing.pair_and_merge(
