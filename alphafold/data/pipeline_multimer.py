@@ -287,6 +287,10 @@ class DataPipeline:
         merged_chains_msas.append(msa)
     merged_chain_features = pipeline.make_msa_features(merged_chains_msas)
 
+    # rename deletion_matirx field
+    merged_chain_features['deletion_matrix'] = np.asarray(
+        merged_chain_features.pop('deletion_matrix_int'), dtype=np.float32)
+
     all_chain_features = {}
     sequence_features = {}
     is_homomer_or_monomer = len(set(input_seqs)) == 1
