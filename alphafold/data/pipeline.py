@@ -97,7 +97,7 @@ def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
   if not use_precomputed_msas or not os.path.exists(msa_out_path):
     result = msa_runner.query(input_fasta_path)[0]
     # don't write big msa files
-    if sys.getsizeof(result[msa_format]) < 200 * (1024 * 1024): # 200mb
+    if sys.getsizeof(result[msa_format]) < 400 * (1024 * 1024): # 400mb
       with open(msa_out_path, 'w') as f:
         f.write(result[msa_format])
   else:
