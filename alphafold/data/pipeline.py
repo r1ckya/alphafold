@@ -15,6 +15,7 @@
 """Functions for building the input features for the AlphaFold model."""
 
 import os
+import sys
 from typing import Any, Mapping, MutableMapping, Optional, Sequence, Union, List
 from absl import logging
 from alphafold.common import residue_constants
@@ -95,8 +96,10 @@ def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
   """Runs an MSA tool, checking if output already exists first."""
   if not use_precomputed_msas or not os.path.exists(msa_out_path):
     result = msa_runner.query(input_fasta_path)[0]
-    with open(msa_out_path, 'w') as f:
-      f.write(result[msa_format])
+    # don't write big msa files
+    if sys.getsizeof(result[msa_format]) < 200 * (1024 * 1024): # 200mb
+      with open(msa_out_path, 'w') as f:
+        f.write(result[msa_format])
   else:
     logging.warning('Reading MSA from file %s', msa_out_path)
     with open(msa_out_path, 'r') as f:
@@ -245,6 +248,9 @@ class DataPipeline:
     msa_features = make_msa_features(
         [uniref90_msa, bfd_msa, mgnify_msa] + custom_msas
     )
+
+    for msa_result in custom_msas_results:
+      msa_result['sto']
 
     logging.info('Uniref90 MSA size: %d sequences.', len(uniref90_msa))
     logging.info('BFD MSA size: %d sequences.', len(bfd_msa))
