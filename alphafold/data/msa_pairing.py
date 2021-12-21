@@ -438,6 +438,7 @@ def block_diag(*arrs: np.ndarray, pad_value: float = 0.0) -> np.ndarray:
 def _correct_post_merged_feats(
     np_example: pipeline.FeatureDict,
     np_chains_list: Sequence[pipeline.FeatureDict],
+    merged_chain_features: pipeline.FeatureDict,
     pair_msa_sequences: bool) -> pipeline.FeatureDict:
   """Adds features that need to be computed/recomputed post merging."""
 
@@ -477,8 +478,12 @@ def _correct_post_merged_feats(
     msa_mask_block_diag = block_diag(
         *msa_masks, pad_value=0)
     msa_mask_all_seq = np.concatenate(msa_masks_all_seq, axis=1)
+    msa_mask_merged = np.ones_like(
+        merged_chain_features['msa'],
+        dtype=np.float32
+    )
     np_example['bert_mask'] = np.concatenate(
-        [msa_mask_all_seq, msa_mask_block_diag], axis=0)
+        [msa_mask_all_seq, msa_mask_block_diag, msa_mask_merged], axis=0)
   return np_example
 
 
@@ -620,6 +625,7 @@ def merge_chain_features(np_chains_list: List[pipeline.FeatureDict],
   np_example = _correct_post_merged_feats(
       np_example=np_example,
       np_chains_list=np_chains_list,
+      merged_chain_features=merged_chain_features,
       pair_msa_sequences=pair_msa_sequences)
 
   return np_example

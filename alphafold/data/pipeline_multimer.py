@@ -176,7 +176,7 @@ class DataPipeline:
                uniprot_database_path: str,
                custom_paired_dbs_paths: List[str],
                max_uniprot_hits: int = 50000,
-               max_custom_paired_dbs_hits: int = 50000,
+               max_custom_paired_dbs_hits: int = 2048,
                use_precomputed_msas: bool = False):
     """Initializes the data pipeline.
 
