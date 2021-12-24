@@ -177,7 +177,8 @@ class DataPipeline:
                custom_paired_dbs_paths: List[str],
                max_uniprot_hits: int = 50000,
                max_custom_paired_dbs_hits: int = 2048,
-               use_precomputed_msas: bool = False):
+               use_precomputed_msas: bool = False,
+               enable_pairing=True):
     """Initializes the data pipeline.
 
     Args:
@@ -203,6 +204,7 @@ class DataPipeline:
     self._max_uniprot_hits = max_uniprot_hits
     self._custom_paired_dbs_hits = max_custom_paired_dbs_hits
     self.use_precomputed_msas = use_precomputed_msas
+    self.enable_pairing = enable_pairing
 
   def _process_single_chain(
           self,
@@ -225,7 +227,7 @@ class DataPipeline:
 
       # We only construct the pairing features if there are 2 or more unique
       # sequences.
-      if not is_homomer_or_monomer:
+      if not is_homomer_or_monomer and self.enable_pairing:
         all_seq_msa_features = self._all_seq_msa_features(chain_fasta_path,
                                                           chain_msa_output_dir)
         chain_features.update(all_seq_msa_features)
@@ -318,6 +320,7 @@ class DataPipeline:
         all_chain_features=all_chain_features,
         merged_chain_features=merged_chain_features,
         is_prokaryote=is_prokaryote,
+        enable_pairing=self.enable_pairing
     )
 
     # Pad MSA to avoid zero-sized extra_msa.

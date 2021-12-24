@@ -120,7 +120,8 @@ flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
 flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'have been written to disk. WARNING: This will not check '
                      'if the sequence, database or configuration have changed.')
-
+flags.DEFINE_boolean('enable_pairing', True,
+                     'Whether to add and pair MSA from UniProt database')
 FLAGS = flags.FLAGS
 
 MAX_TEMPLATE_HITS = 20
@@ -371,7 +372,8 @@ def main(argv):
         jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
         uniprot_database_path=FLAGS.uniprot_database_path,
         custom_paired_dbs_paths=FLAGS.custom_paired_dbs_paths,
-        use_precomputed_msas=FLAGS.use_precomputed_msas)
+        use_precomputed_msas=FLAGS.use_precomputed_msas,
+        enable_pairing=FLAGS.enable_pairing)
   else:
     data_pipeline = monomer_data_pipeline
 
