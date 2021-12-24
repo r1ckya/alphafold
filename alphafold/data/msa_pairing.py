@@ -483,7 +483,7 @@ def _correct_post_merged_feats(
         dtype=np.float32
     )
     np_example['bert_mask'] = np.concatenate(
-        [msa_mask_all_seq, msa_mask_block_diag, msa_mask_merged], axis=0)
+        [msa_mask_merged, msa_mask_all_seq, msa_mask_block_diag], axis=0)
   return np_example
 
 
@@ -590,7 +590,7 @@ def _concatenate_features(example, feats):
   for feature_name in MSA_FEATURES:
     if feature_name in example:
       example[feature_name] = np.concatenate(
-          [example[feature_name], feats[feature_name]],
+          [feats[feature_name], example[feature_name]],
           axis=0
       )
   example['num_alignment'] = np.array(
