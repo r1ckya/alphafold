@@ -448,23 +448,20 @@ def _correct_post_merged_feats(
                                             dtype=np.int32)
 
   if not pair_msa_sequences:
-    # Generate a bias that is 1 for the first row of every block in the
-    # block diagonal MSA - i.e. make sure the cluster stack always includes
-    # the query sequences for each chain (since the first row is the query
-    # sequence).
-    cluster_bias_masks = []
-    for chain in np_chains_list:
-      mask = np.zeros(chain['msa'].shape[0])
-      mask[0] = 1
-      cluster_bias_masks.append(mask)
-    np_example['cluster_bias_mask'] = np.concatenate(cluster_bias_masks)
-
+    np_example['cluster_bias_mask'] = np.zeros(np_example['msa'].shape[0])
+    np_example['cluster_bias_mask'][0] = 1
+    
     # Initialize Bert mask with masked out off diagonals.
     msa_masks = [np.ones(x['msa'].shape, dtype=np.float32)
                  for x in np_chains_list]
-
-    np_example['bert_mask'] = block_diag(
+    msa_mask_merged = np.ones_like(
+        merged_chain_features['msa'],
+        dtype=np.float32
+    )
+    msa_mask_block_diag = block_diag(
         *msa_masks, pad_value=0)
+    np_example['bert_mask'] = np.concatenate(
+        [msa_mask_merged, msa_mask_block_diag], axis=0)
   else:
     np_example['cluster_bias_mask'] = np.zeros(np_example['msa'].shape[0])
     np_example['cluster_bias_mask'][0] = 1
